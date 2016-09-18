@@ -9,10 +9,11 @@ html {
 .container {
     position: relative;
 }
-.container > * {
+.container .reference,
+.container svg {
     /*position: absolute;*/
-    width: 48px;
-    height: 48px;
+    width: 72px;
+    height: 72px;
 }
 
 svg {
@@ -106,6 +107,20 @@ svg.connecting .ring4 {
         opacity: 0;
     }
 }
+
+.reference-connecting {
+    background: url(./sprite/ic_media_route_connecting_dark.png) no-repeat;
+    animation: sprite 0.9s steps(23) infinite;
+}
+
+@keyframes sprite {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: -1656px 0;
+    }
+}
 </style>
 </head>
 
@@ -128,7 +143,8 @@ svg.connecting .ring4 {
 
 <div class="container">
 
-<video src="./reference/sender-cast-icon-states3_a/cropped.mp4" loop preload="auto"></video>
+<!-- <video src="./reference/sender-cast-icon-states3_a/cropped.mp4" loop preload="auto"></video> -->
+<div class="reference reference-connecting"></div>
 
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
     <defs>
@@ -159,7 +175,7 @@ svg.connecting .ring4 {
 
 <script>
     var svgIcon = document.querySelector('svg');
-    var svgRings = svgIcon.querySelectorAll('.ring');
+    var animatedEls = document.querySelectorAll('.ring, .reference');
     var selectState = document.getElementById('select-state');
     var btnPlay = document.getElementById('btn-play');
     function updateIconClass() {
@@ -167,48 +183,46 @@ svg.connecting .ring4 {
     }
     selectState.addEventListener('change', updateIconClass);
 
-    var vid = document.querySelector('video');
-    var currentFrame = document.getElementById('current-frame');
-    var frameRate = 33;
+    var inputCurrentFrame = document.getElementById('current-frame');
+    var currentFrame = 0;
+    var nbFrames = 23;
+    var duration = 0.9; // seconds
+    var frameRate = nbFrames / duration;
+    var paused = true;
     function updateFrame() {
-        vid.currentTime = currentFrame.value / frameRate;
+        currentFrame = inputCurrentFrame.value % nbFrames;
+        inputCurrentFrame.value = currentFrame;
         seekAnimations();
     }
     function seekAnimations() {
-        for (var ring of svgRings) {
-            ring.style.animationName = 'none';
-            ring.style.animationDelay = (-vid.currentTime) + 's';
-            ring.style.animationPlayState = 'paused';
+        for (var el of animatedEls) {
+            el.style.animationName = 'none';
+            el.style.animationDelay = (-currentFrame / frameRate) + 's';
+            el.style.animationPlayState = 'paused';
         }
         requestAnimationFrame(restartAnimations);
     }
     function restartAnimations() {
-        for (var ring of svgRings) {
-            ring.style.animationName = '';
-            if (vid.paused) {
-                ring.style.animationPlayState = 'paused';
+        for (var el of animatedEls) {
+            el.style.animationName = '';
+            if (paused) {
+                el.style.animationPlayState = 'paused';
             } else {
-                ring.style.animationPlayState = 'running';
+                el.style.animationPlayState = 'running';
             }
         }
     }
-    vid.addEventListener('durationchange', function () {
-        currentFrame.max = Math.ceil(vid.duration * frameRate) - 1;
-    });
-    vid.addEventListener('timeupdate', function () {
-        currentFrame.value = Math.round(vid.currentTime * frameRate);
-    });
     btnPlay.addEventListener('click', function () {
-        if (vid.paused) {
+        if (paused) {
             btnPlay.textContent = 'Pause';
-            vid.play();
+            paused = false;
         } else {
             btnPlay.textContent = 'Play';
-            vid.pause();
+            paused = true;
         }
         seekAnimations();
     });
-    currentFrame.addEventListener('change', updateFrame);
+    inputCurrentFrame.addEventListener('change', updateFrame);
 
     updateIconClass();
     updateFrame();
